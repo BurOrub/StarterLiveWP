@@ -1,0 +1,40 @@
+# Release del plugin: al push di un tag "vX.Y.Z" crea lo zip pulito (cartella starter-live/) e lo allega alla release.
+# Il tag deve coincidere con "Version:" nel file principale del plugin.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Il tag deve coincidere con Version del plugin
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          ver="$(sed -n 's/^[[:space:]]*\*\?[[:space:]]*Version:[[:space:]]*//p' starter-live.php | head -n1 | tr -d '\r')"
+          if [ "$tag" != "$ver" ]; then
+            echo "Il tag $GITHUB_REF_NAME non coincide con Version: $ver in starter-live.php"
+            exit 1
+          fi
+
+      - name: Crea lo zip pulito
+        run: |
+          mkdir -p dist-zip/starter-live
+          rsync -a \
+            --exclude='.git/' --exclude='.github/' --exclude='.gitignore' --exclude='README.md' --exclude='.DS_Store' \
+            --exclude='dist-zip/' --exclude='*.bak*' --exclude='*.orig' --exclude='*.map' --exclude='*.log' \
+            ./ dist-zip/starter-live/
+          (cd dist-zip && zip -qr starter-live.zip starter-live)
+
+      - name: Pubblica la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist-zip/starter-live.zip --title "starter-live ${GITHUB_REF_NAME#v}" --generate-notes
