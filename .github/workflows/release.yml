@@ -19,7 +19,7 @@ jobs:
       - name: Il tag deve coincidere con Version del plugin
         run: |
           tag="${GITHUB_REF_NAME#v}"
-          ver="$(sed -n 's/^[[:space:]]*\*\?[[:space:]]*Version:[[:space:]]*//p' starter-live.php | head -n1 | tr -d '\r')"
+          ver="$(grep -m1 -E '^[[:space:]]*\*?[[:space:]]*Version:' starter-live.php | sed -E 's/.*Version:[[:space:]]*//' | tr -d '\r')"
           if [ "$tag" != "$ver" ]; then
             echo "Il tag $GITHUB_REF_NAME non coincide con Version: $ver in starter-live.php"
             exit 1
