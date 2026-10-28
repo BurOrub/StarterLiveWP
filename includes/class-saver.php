@@ -149,8 +149,8 @@ class Starter_Live_Saver {
 			}
 
 			// Campi di una scheda che non è fatta di blocchi (es. un immobile).
-			if ( 'acfpost' === ( $change['src'] ?? '' ) ) {
-				$result = self::apply_acf_post( (int) $change['post'], $change );
+			if ( 'metapost' === ( $change['src'] ?? '' ) ) {
+				$result = self::apply_meta_post( (int) $change['post'], $change );
 
 				if ( is_wp_error( $result ) ) {
 					$errors[] = $result->get_error_message();
@@ -235,17 +235,17 @@ class Starter_Live_Saver {
 
 	/**
 	 * Un campo di una scheda che non è fatta di blocchi (es. un immobile): stessi controlli e stessa pulizia dei campi dei blocchi
-	 * (apply_acf), poi si scrive il valore nel meta del contenuto. Solo per i tipi di contenuto dichiarati dal tema e solo per campi veri.
+	 * (apply_field), poi si scrive il valore nel meta del contenuto. Solo per i tipi di contenuto dichiarati dal tema e solo per campi veri.
 	 */
-	private static function apply_acf_post( $post_id, array $change ) {
+	private static function apply_meta_post( $post_id, array $change ) {
 		$post = get_post( $post_id );
 
-		if ( ! $post || ! current_user_can( 'edit_post', $post_id ) || ! in_array( $post->post_type, Starter_Live_Frontend::acf_post_types(), true ) ) {
+		if ( ! $post || ! current_user_can( 'edit_post', $post_id ) || ! in_array( $post->post_type, Starter_Live_Frontend::meta_post_types(), true ) ) {
 			return new WP_Error( 'starter_live_cap', __( 'Non puoi modificare questa scheda.', 'starter-live' ) );
 		}
 
 		$name  = (string) ( $change['field'] ?? '' );
-		$stale = new WP_Error( 'starter_live_acf', __( 'Questo campo non si può modificare dal frontend.', 'starter-live' ) );
+		$stale = new WP_Error( 'starter_live_field', __( 'Questo campo non si può modificare dal frontend.', 'starter-live' ) );
 
 		if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $name ) || ! metadata_exists( 'post', $post_id, $name ) ) {
 			return $stale;
@@ -261,7 +261,7 @@ class Starter_Live_Saver {
 			),
 		);
 
-		$result = self::apply_acf( $block, $name, null, $change['value'] ?? '', $stale );
+		$result = self::apply_field( $block, $name, null, $change['value'] ?? '', $stale );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -449,16 +449,16 @@ class Starter_Live_Saver {
 			}
 		}
 
-		if ( 'acf' === ( $change['src'] ?? '' ) ) {
-			return self::apply_acf( $block, (string) ( $change['field'] ?? '' ), isset( $change['idx'] ) ? (int) $change['idx'] : null, $value, $stale );
+		if ( 'field' === ( $change['src'] ?? '' ) ) {
+			return self::apply_field( $block, (string) ( $change['field'] ?? '' ), isset( $change['idx'] ) ? (int) $change['idx'] : null, $value, $stale );
 		}
 
 		return self::apply_core( $block, $value, $stale );
 	}
 
-	/* ---------------------------------------------------------------- ACF */
+	/* ---------------------------------------------------------------- Campi */
 
-	private static function apply_acf( array $block, $name, $idx, $value, WP_Error $stale ) {
+	private static function apply_field( array $block, $name, $idx, $value, WP_Error $stale ) {
 		if ( ! Starter_Live_Frontend::has_fields() || ! preg_match( '/^[A-Za-z0-9_]+$/', $name ) || ! isset( $block['attrs']['data'][ $name ], $block['attrs']['data'][ '_' . $name ] ) ) {
 			return $stale;
 		}

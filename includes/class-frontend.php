@@ -23,7 +23,7 @@ class Starter_Live_Frontend {
 		add_action( 'admin_bar_menu', array( __CLASS__, 'admin_bar' ), 999 );
 		add_filter( 'starter_live_attrs', array( __CLASS__, 'attrs' ), 10, 2 );
 		add_filter( 'post_thumbnail_html', array( __CLASS__, 'thumbnail' ), 99, 3 );
-		add_filter( 'starter_live_post_html', array( __CLASS__, 'annotate_post_acf' ), 10, 2 );
+		add_filter( 'starter_live_post_html', array( __CLASS__, 'annotate_post_fields' ), 10, 2 );
 	}
 
 	/**
@@ -145,7 +145,7 @@ class Starter_Live_Frontend {
 		);
 
 		if ( isset( $block['attrs']['data'] ) && is_array( $block['attrs']['data'] ) && Starter_Live_Frontend::has_fields() ) {
-			$html = Starter_Live_Annotator::acf( $html, $block, $context );
+			$html = Starter_Live_Annotator::fields( $html, $block, $context );
 		} else {
 			$html = Starter_Live_Annotator::core( $html, $block, $context );
 		}
@@ -153,9 +153,9 @@ class Starter_Live_Frontend {
 		return $html;
 	}
 
-	/** Vero se c'è chi fornisce le definizioni dei campi (plugin Starter Blocks, oppure ACF). */
+	/** Vero se c'è chi fornisce le definizioni dei campi (plugin Starter Blocks). */
 	public static function has_fields() {
-		return function_exists( 'starter_field_def' ) || function_exists( 'acf_get_field' );
+		return function_exists( 'starter_field_def' );
 	}
 
 	/** Definizione di un campo dalla sua chiave (tipo, scelte, minimo e massimo…). */
@@ -164,14 +164,14 @@ class Starter_Live_Frontend {
 			return starter_field_def( $key );
 		}
 
-		return function_exists( 'acf_get_field' ) ? acf_get_field( $key ) : null;
+		return null;
 	}
 
 	/**
 	 * Tipi di contenuto con campi modificabili dal frontend anche se non sono blocchi (es. la scheda di un immobile).
 	 * Il tema li dichiara con il filtro starter_live_meta_post_types.
 	 */
-	public static function acf_post_types() {
+	public static function meta_post_types() {
 		return (array) apply_filters( 'starter_live_meta_post_types', array() );
 	}
 
@@ -179,14 +179,14 @@ class Starter_Live_Frontend {
 	 * Scheda di un contenuto con campi (non blocchi): si passa il suo HTML, ogni campo riconosciuto diventa modificabile.
 	 * Si usa come filtro (starter_live_post_html): il tema lo applica all'HTML della scheda solo se il plugin c'è.
 	 */
-	public static function annotate_post_acf( $html, $post_id ) {
+	public static function annotate_post_fields( $html, $post_id ) {
 		$post_id = (int) $post_id;
 
 		if ( ! is_string( $html ) || '' === trim( $html ) || ! $post_id || ! self::can_edit() || $post_id !== self::target_post_id() || ! Starter_Live_Frontend::has_fields() ) {
 			return $html;
 		}
 
-		if ( ! in_array( get_post_type( $post_id ), self::acf_post_types(), true ) || ! current_user_can( 'edit_post', $post_id ) ) {
+		if ( ! in_array( get_post_type( $post_id ), self::meta_post_types(), true ) || ! current_user_can( 'edit_post', $post_id ) ) {
 			return $html;
 		}
 
@@ -215,17 +215,17 @@ class Starter_Live_Frontend {
 			return $html;
 		}
 
-		return Starter_Live_Annotator::acf(
+		return Starter_Live_Annotator::fields(
 			$html,
 			array(
-				'blockName' => 'acf/scheda',
+				'blockName' => 'starter/scheda',
 				'attrs'     => array( 'data' => $data ),
 			),
 			array(
 				'post'  => $post_id,
 				'path'  => '',
 				'block' => '',
-				'src'   => 'acfpost',
+				'src'   => 'metapost',
 			)
 		);
 	}
@@ -515,13 +515,13 @@ class Starter_Live_Frontend {
 			)
 		);
 
-		// Marcatore di un numero (prezzo, superficie…) di una scheda con campi: lo raccoglie annotate_post_acf().
-		if ( 'acfnum' === $args['src'] ) {
+		// Marcatore di un numero (prezzo, superficie…) di una scheda con campi: lo raccoglie annotate_post_fields().
+		if ( 'fieldnum' === $args['src'] ) {
 			return preg_match( '/^[A-Za-z0-9_]+$/', (string) $args['key'] ) ? $attrs . ' data-live-num="' . esc_attr( $args['key'] ) . '"' : $attrs;
 		}
 
 		// Marcatore di un elenco scritto in un campo di testo, una voce per riga (es. l'elenco con spunte di un servizio).
-		if ( 'acflines' === $args['src'] ) {
+		if ( 'fieldlines' === $args['src'] ) {
 			return preg_match( '/^[A-Za-z0-9_]+$/', (string) $args['key'] ) ? $attrs . ' data-live-lines="' . esc_attr( $args['key'] ) . '"' : $attrs;
 		}
 

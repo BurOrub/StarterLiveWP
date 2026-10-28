@@ -2,7 +2,7 @@
 /**
  * Abbina i contenuti di un blocco all'HTML già renderizzato e marca gli elementi modificabili con data-live="id".
  *
- * - Blocchi ACF: i valori stanno in attrs.data; si cerca nell'HTML l'elemento che mostra quel valore
+ * - Blocchi: i valori stanno in attrs.data; si cerca nell'HTML l'elemento che mostra quel valore
  *   (testo uguale, link con lo stesso href, immagine/video con lo stesso file).
  * - Blocchi core: si marca l'elemento principale (paragrafo, titolo, immagine, pulsante…).
  *
@@ -218,9 +218,9 @@ class Starter_Live_Annotator {
 		return $html;
 	}
 
-	/* ---------------------------------------------------------------- Blocchi ACF */
+	/* ---------------------------------------------------------------- Campi dei blocchi */
 
-	public static function acf( $html, array $block, array $ctx ) {
+	public static function fields( $html, array $block, array $ctx ) {
 		$data  = $block['attrs']['data'];
 		$type  = WP_Block_Type_Registry::get_instance()->get_registered( $block['blockName'] );
 		$title = $type && $type->title ? $type->title : '';
@@ -245,7 +245,7 @@ class Starter_Live_Annotator {
 			}
 
 			$base = $ctx + array(
-				'src'   => 'acf',
+				'src'   => 'field',
 				'field' => $name,
 				'label' => $label,
 				'group' => $title,
@@ -254,13 +254,13 @@ class Starter_Live_Annotator {
 			// Elenco scritto in un campo di testo, una voce per riga: l'elemento (<ul>) porta il marcatore data-live-lines.
 			if ( 'textarea' === $field['type'] && is_string( $value ) && false !== strpos( $html, 'data-live-lines="' . $name . '"' ) ) {
 				$lines = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', $value ) ), 'strlen' ) );
-				$html  = self::acf_marked( $html, 'data-live-lines', $name, $base + array( 't' => 'list', 'lines' => true, 'value' => $lines ) );
+				$html  = self::field_marked( $html, 'data-live-lines', $name, $base + array( 't' => 'list', 'lines' => true, 'value' => $lines ) );
 				continue;
 			}
 
 			// Valore scritto nella pagina con un marcatore del tema (data-live-num): vale per tutti gli elementi che lo mostrano.
 			if ( false !== strpos( $html, 'data-live-num="' . $name . '"' ) ) {
-				$marked = self::acf_marked_entry( $field, $base, $value );
+				$marked = self::field_marked_entry( $field, $base, $value );
 
 				if ( null !== $marked ) {
 					// Un indirizzo mostrato anche in una mappa (iframe): la stessa voce cambia il testo e la mappa.
@@ -271,10 +271,10 @@ class Starter_Live_Annotator {
 					}
 
 					$id   = null;
-					$html = self::acf_number( $html, $name, $value, $marked, $id );
+					$html = self::field_number( $html, $name, $value, $marked, $id );
 
 					if ( $map && null !== $id ) {
-						$html = self::acf_iframe_attach( $html, $value, $id );
+						$html = self::field_iframe_attach( $html, $value, $id );
 					}
 
 					continue;
@@ -287,28 +287,28 @@ class Starter_Live_Annotator {
 				case 'email':
 					// Un campo che contiene uno shortcode (es. il modulo Contact Form 7 del blocco Contatti): si cambia lo shortcode.
 					if ( is_string( $value ) && preg_match( '/^\s*\[[A-Za-z0-9_-]+[\s\]\/]/', $value ) ) {
-						$html = self::acf_shortcode( $html, $value, $base + array( 't' => 'shortcode' ) );
+						$html = self::field_shortcode( $html, $value, $base + array( 't' => 'shortcode' ) );
 						break;
 					}
 
 					if ( is_string( $value ) && '' !== trim( $value ) ) {
-						$html = self::acf_text( $html, $value, $base + array( 't' => ( false !== strpos( $value, '<' ) ) ? 'rich' : 'text', 'multiline' => 'textarea' === $field['type'] ), false );
+						$html = self::field_text( $html, $value, $base + array( 't' => ( false !== strpos( $value, '<' ) ) ? 'rich' : 'text', 'multiline' => 'textarea' === $field['type'] ), false );
 					}
 					break;
 
 				case 'wysiwyg':
 					if ( is_string( $value ) && '' !== trim( $value ) ) {
-						$html = self::acf_text( $html, $value, $base + array( 't' => 'rich', 'multiline' => true ), true );
+						$html = self::field_text( $html, $value, $base + array( 't' => 'rich', 'multiline' => true ), true );
 					}
 					break;
 
 				case 'number':
-					$html = self::acf_number( $html, $name, $value, $base + array( 't' => 'number', 'min' => isset( $field['min'] ) ? $field['min'] : '', 'max' => isset( $field['max'] ) ? $field['max'] : '' ) );
+					$html = self::field_number( $html, $name, $value, $base + array( 't' => 'number', 'min' => isset( $field['min'] ) ? $field['min'] : '', 'max' => isset( $field['max'] ) ? $field['max'] : '' ) );
 					break;
 
 				case 'link':
 					if ( is_array( $value ) && ! empty( $value['url'] ) ) {
-						$html = self::acf_link( $html, $value, $base );
+						$html = self::field_link( $html, $value, $base );
 					}
 					break;
 
@@ -319,7 +319,7 @@ class Starter_Live_Annotator {
 					}
 
 					if ( is_numeric( $value ) && (int) $value > 0 ) {
-						$html = self::acf_media( $html, (int) $value, $base + array( 't' => 'image' === $field['type'] ? 'image' : 'file' ), $field );
+						$html = self::field_media( $html, (int) $value, $base + array( 't' => 'image' === $field['type'] ? 'image' : 'file' ), $field );
 					}
 					break;
 
@@ -328,7 +328,7 @@ class Starter_Live_Annotator {
 					$icon = ( is_string( $value ) && '' !== $value ) ? $value : (string) ( $field['default_value'] ?? '' );
 
 					if ( '' !== $icon ) {
-						$html = self::acf_icon( $html, $icon, $base + array( 't' => 'icon', 'allowNull' => ! empty( $field['allow_null'] ) ) );
+						$html = self::field_icon( $html, $icon, $base + array( 't' => 'icon', 'allowNull' => ! empty( $field['allow_null'] ) ) );
 					}
 					break;
 
@@ -337,7 +337,7 @@ class Starter_Live_Annotator {
 						$ids = array_values( array_filter( array_map( 'absint', $value ) ) );
 
 						if ( $ids ) {
-							$html = self::acf_gallery(
+							$html = self::field_gallery(
 								$html,
 								$ids,
 								$base + array(
@@ -355,7 +355,7 @@ class Starter_Live_Annotator {
 
 		// Copertine dei video: non sono un elemento a sé, si cambiano insieme al video.
 		foreach ( $posters as $poster ) {
-			self::acf_poster( $html, $poster[0], $poster[1] );
+			self::field_poster( $html, $poster[0], $poster[1] );
 		}
 
 		return $html;
@@ -363,9 +363,9 @@ class Starter_Live_Annotator {
 
 	/**
 	 * Numero (prezzo, superficie, locali…): nell'HTML il valore è scritto in forma diversa ("€ 1.500.000", "5+ locali"), quindi il tema
-	 * indica l'elemento con data-live-num="nome del campo" (vedi l'attributo "acfnum" di starter_live_attrs) e qui lo si aggancia.
+	 * indica l'elemento con data-live-num="nome del campo" (vedi l'attributo "fieldnum" di starter_live_attrs) e qui lo si aggancia.
 	 */
-	private static function acf_number( $html, $name, $value, array $entry, &$id = null ) {
+	private static function field_number( $html, $name, $value, array $entry, &$id = null ) {
 		if ( ! isset( $entry['value'] ) ) {
 			return $html;
 		}
@@ -390,7 +390,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Marca con una voce sola tutti gli elementi che portano l'attributo $attr = $name; senza elementi non fa niente. */
-	private static function acf_marked( $html, $attr, $name, array $entry ) {
+	private static function field_marked( $html, $attr, $name, array $entry ) {
 		$p  = new WP_HTML_Tag_Processor( $html );
 		$id = null;
 
@@ -411,7 +411,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Voce di un valore marcato dal tema (numero, scelta da elenco, testo breve); null se il tipo di campo non è gestito. */
-	private static function acf_marked_entry( array $field, array $base, $value ) {
+	private static function field_marked_entry( array $field, array $base, $value ) {
 		switch ( $field['type'] ) {
 			case 'number':
 				return is_scalar( $value ) ? $base + array( 't' => 'number', 'min' => isset( $field['min'] ) ? $field['min'] : '', 'max' => isset( $field['max'] ) ? $field['max'] : '', 'value' => (string) $value ) : null;
@@ -441,7 +441,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Se un <video> già marcato usa questa immagine come poster, la collega alla voce del video. */
-	private static function acf_poster( $html, $attachment_id, array $entry ) {
+	private static function field_poster( $html, $attachment_id, array $entry ) {
 		$url = wp_get_attachment_url( $attachment_id );
 
 		if ( ! $url ) {
@@ -474,7 +474,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Shortcode: il tema segna l'elemento che lo contiene con data-live-shortcode="nome_campo". */
-	private static function acf_shortcode( $html, $value, array $entry ) {
+	private static function field_shortcode( $html, $value, array $entry ) {
 		$p = new WP_HTML_Tag_Processor( $html );
 
 		while ( $p->next_tag() ) {
@@ -506,7 +506,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Collega la mappa a una voce già creata (stesso data-live del testo dell'indirizzo). */
-	private static function acf_iframe_attach( $html, $value, $id ) {
+	private static function field_iframe_attach( $html, $value, $id ) {
 		$p = new WP_HTML_Tag_Processor( $html );
 
 		while ( $p->next_tag( 'iframe' ) ) {
@@ -522,7 +522,7 @@ class Starter_Live_Annotator {
 		return $html;
 	}
 
-	private static function acf_iframe_value( $html, $value, array $entry ) {
+	private static function field_iframe_value( $html, $value, array $entry ) {
 		$p = new WP_HTML_Tag_Processor( $html );
 
 		while ( $p->next_tag( 'iframe' ) ) {
@@ -540,7 +540,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Icona del tema: l'<svg> disegnato da starter_icon() porta la classe "icon--nome"; si marca il primo non ancora marcato. */
-	private static function acf_icon( $html, $name, array $entry ) {
+	private static function field_icon( $html, $name, array $entry ) {
 		$p = new WP_HTML_Tag_Processor( $html );
 
 		while ( $p->next_tag( 'svg' ) ) {
@@ -556,7 +556,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Testo: cerca <tag>valore</tag> e marca il primo elemento non ancora marcato. */
-	private static function acf_text( $html, $value, array $entry, $wysiwyg ) {
+	private static function field_text( $html, $value, array $entry, $wysiwyg ) {
 		$candidates = array( esc_html( $value ), nl2br( esc_html( $value ) ), wp_kses_post( $value ) );
 
 		if ( $wysiwyg ) {
@@ -593,7 +593,7 @@ class Starter_Live_Annotator {
 
 		// Testo lungo (editor): il tema può aver cambiato gli a capo o la punteggiatura, si cerca il contenitore con lo stesso testo.
 		if ( $wysiwyg ) {
-			$fuzzy = self::acf_container_with_text( $html, $value, $entry );
+			$fuzzy = self::field_container_with_text( $html, $value, $entry );
 
 			return null !== $fuzzy ? $fuzzy : $html;
 		}
@@ -601,14 +601,14 @@ class Starter_Live_Annotator {
 		// Ultima possibilità (solo testi semplici e a formattazione ridotta): il tema può aver tolto o cambiato dei tag (es. <b>),
 		// quindi si cerca l'elemento il cui testo, senza tag, è uguale a quello salvato.
 		if ( ! $wysiwyg ) {
-			$fuzzy = self::acf_text_fuzzy( $html, $value, $entry );
+			$fuzzy = self::field_text_fuzzy( $html, $value, $entry );
 
 			if ( null !== $fuzzy ) {
 				return $fuzzy;
 			}
 
 			// Non è testo visibile: può essere l'indirizzo di una mappa (iframe).
-			$map = self::acf_iframe_value( $html, $value, $entry );
+			$map = self::field_iframe_value( $html, $value, $entry );
 
 			if ( null !== $map ) {
 				return $map;
@@ -627,7 +627,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Contenitore (div, section, article, anche con altri div dentro) non ancora marcato il cui testo è uguale a quello salvato; null se non c'è. */
-	private static function acf_container_with_text( $html, $value, array $entry ) {
+	private static function field_container_with_text( $html, $value, array $entry ) {
 		$want = self::norm_text( $value );
 
 		if ( '' === $want || ! preg_match_all( '~<(div|section|article)\b((?:[^<>"\']|"[^"]*"|\'[^\']*\')*)>~i', $html, $opens, PREG_SET_ORDER | PREG_OFFSET_CAPTURE ) ) {
@@ -661,7 +661,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Cerca (prima i tag "di testo", per ultimo div) un elemento non ancora marcato con lo stesso testo; null se non lo trova. */
-	private static function acf_text_fuzzy( $html, $value, array $entry, array $tags = array() ) {
+	private static function field_text_fuzzy( $html, $value, array $entry, array $tags = array() ) {
 		$want = self::norm_text( $value );
 
 		if ( '' === $want ) {
@@ -689,7 +689,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Link: cerca il primo <a> con lo stesso href non ancora marcato. */
-	private static function acf_link( $html, array $value, array $entry ) {
+	private static function field_link( $html, array $value, array $entry ) {
 		$wanted = untrailingslashit( (string) $value['url'] );
 		$p      = new WP_HTML_Tag_Processor( $html );
 
@@ -720,7 +720,7 @@ class Starter_Live_Annotator {
 	 * Gallery: una sola voce per tutto il campo. Ogni elemento della pagina che mostra una delle sue foto
 	 * (slide, miniature, foto sovrapposte…) riceve lo stesso data-live e apre lo stesso editor.
 	 */
-	private static function acf_gallery( $html, array $ids, array $entry ) {
+	private static function field_gallery( $html, array $ids, array $entry ) {
 		$matchers = array();
 		$thumbs   = array();
 
@@ -772,7 +772,7 @@ class Starter_Live_Annotator {
 	}
 
 	/** Immagine / video: cerca l'elemento che usa lo stesso file (anche in una versione ridimensionata). */
-	private static function acf_media( $html, $attachment_id, array $entry, array $field ) {
+	private static function field_media( $html, $attachment_id, array $entry, array $field ) {
 		$url = wp_get_attachment_url( $attachment_id );
 
 		if ( ! $url ) {

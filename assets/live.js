@@ -398,7 +398,7 @@
 					if (node) { node.nodeValue = node.nodeValue.replace(prev, value); f.cur = value; }
 					break;
 				}
-				if ((f.src === 'acf' || f.src === 'acfpost') && /<[a-z]/i.test(String(value))) { el.innerHTML = safeHtml(value); break; } // testo con grassetto / corsivo / sottolineato
+				if ((f.src === 'field' || f.src === 'metapost') && /<[a-z]/i.test(String(value))) { el.innerHTML = safeHtml(value); break; } // testo con grassetto / corsivo / sottolineato
 				el.innerHTML = esc(value).replace(/\n/g, f.multiline ? '<br>' : ' ');
 				break;
 			case 'rich':
@@ -706,7 +706,7 @@
 
 		// Tutti i testi dei moduli ammettono grassetto, corsivo e sottolineato. Restano testo semplice solo quelli che non possono averli
 		// (titolo e nome di pagine e categorie, occhielli salvati come campo, indirizzo della mappa, testi dentro un'icona o tra virgolette).
-		var formattable = f.t === 'text' && (f.src === 'acf' || f.src === 'acfpost') && !f.map && !f.tn;
+		var formattable = f.t === 'text' && (f.src === 'field' || f.src === 'metapost') && !f.map && !f.tn;
 
 		if (f.t === 'text' && !formattable) {
 			var ctl = f.multiline ? h('textarea') : h('input', { type: 'text' });
