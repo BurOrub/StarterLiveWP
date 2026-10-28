@@ -148,7 +148,7 @@ class Starter_Live_Saver {
 				continue;
 			}
 
-			// Campi ACF di una scheda che non è fatta di blocchi (es. un immobile).
+			// Campi di una scheda che non è fatta di blocchi (es. un immobile).
 			if ( 'acfpost' === ( $change['src'] ?? '' ) ) {
 				$result = self::apply_acf_post( (int) $change['post'], $change );
 
@@ -234,8 +234,8 @@ class Starter_Live_Saver {
 	}
 
 	/**
-	 * Un campo ACF di una scheda che non è fatta di blocchi (es. un immobile): stessi controlli e stessa pulizia dei campi dei blocchi
-	 * (apply_acf), poi si scrive il valore nel meta del contenuto. Solo per i tipi di contenuto dichiarati dal tema e solo per campi ACF veri.
+	 * Un campo di una scheda che non è fatta di blocchi (es. un immobile): stessi controlli e stessa pulizia dei campi dei blocchi
+	 * (apply_acf), poi si scrive il valore nel meta del contenuto. Solo per i tipi di contenuto dichiarati dal tema e solo per campi veri.
 	 */
 	private static function apply_acf_post( $post_id, array $change ) {
 		$post = get_post( $post_id );
@@ -459,11 +459,11 @@ class Starter_Live_Saver {
 	/* ---------------------------------------------------------------- ACF */
 
 	private static function apply_acf( array $block, $name, $idx, $value, WP_Error $stale ) {
-		if ( ! function_exists( 'acf_get_field' ) || ! preg_match( '/^[A-Za-z0-9_]+$/', $name ) || ! isset( $block['attrs']['data'][ $name ], $block['attrs']['data'][ '_' . $name ] ) ) {
+		if ( ! Starter_Live_Frontend::has_fields() || ! preg_match( '/^[A-Za-z0-9_]+$/', $name ) || ! isset( $block['attrs']['data'][ $name ], $block['attrs']['data'][ '_' . $name ] ) ) {
 			return $stale;
 		}
 
-		$field = acf_get_field( $block['attrs']['data'][ '_' . $name ] );
+		$field = Starter_Live_Frontend::field_def( $block['attrs']['data'][ '_' . $name ] );
 
 		if ( ! $field ) {
 			return $stale;
@@ -870,7 +870,7 @@ class Starter_Live_Saver {
 	}
 
 	/**
-	 * Testo di un campo ACF modificato dal frontend, con grassetto / corsivo / sottolineato.
+	 * Testo di un campo modificato dal frontend, con grassetto / corsivo / sottolineato.
 	 * Senza formattazione resta testo semplice (come prima); con formattazione si salva l'HTML ridotto ai soli tag in linea.
 	 */
 	private static function inline_value( $value, $multiline ) {

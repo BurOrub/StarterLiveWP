@@ -144,7 +144,7 @@ class Starter_Live_Frontend {
 			'block' => $block['blockName'],
 		);
 
-		if ( isset( $block['attrs']['data'] ) && is_array( $block['attrs']['data'] ) && function_exists( 'acf_get_field' ) ) {
+		if ( isset( $block['attrs']['data'] ) && is_array( $block['attrs']['data'] ) && Starter_Live_Frontend::has_fields() ) {
 			$html = Starter_Live_Annotator::acf( $html, $block, $context );
 		} else {
 			$html = Starter_Live_Annotator::core( $html, $block, $context );
@@ -153,22 +153,36 @@ class Starter_Live_Frontend {
 		return $html;
 	}
 
-	/**
-	 * Tipi di contenuto con campi ACF modificabili dal frontend anche se non sono blocchi (es. la scheda di un immobile).
-	 * Il tema li dichiara con il filtro starter_live_acf_post_types.
-	 */
-	public static function acf_post_types() {
-		return (array) apply_filters( 'starter_live_acf_post_types', array() );
+	/** Vero se c'è chi fornisce le definizioni dei campi (plugin Starter Blocks, oppure ACF). */
+	public static function has_fields() {
+		return function_exists( 'starter_field_def' ) || function_exists( 'acf_get_field' );
+	}
+
+	/** Definizione di un campo dalla sua chiave (tipo, scelte, minimo e massimo…). */
+	public static function field_def( $key ) {
+		if ( function_exists( 'starter_field_def' ) ) {
+			return starter_field_def( $key );
+		}
+
+		return function_exists( 'acf_get_field' ) ? acf_get_field( $key ) : null;
 	}
 
 	/**
-	 * Scheda di un contenuto con campi ACF (non blocchi): si passa il suo HTML, ogni campo riconosciuto diventa modificabile.
+	 * Tipi di contenuto con campi modificabili dal frontend anche se non sono blocchi (es. la scheda di un immobile).
+	 * Il tema li dichiara con il filtro starter_live_meta_post_types.
+	 */
+	public static function acf_post_types() {
+		return (array) apply_filters( 'starter_live_meta_post_types', array() );
+	}
+
+	/**
+	 * Scheda di un contenuto con campi (non blocchi): si passa il suo HTML, ogni campo riconosciuto diventa modificabile.
 	 * Si usa come filtro (starter_live_post_html): il tema lo applica all'HTML della scheda solo se il plugin c'è.
 	 */
 	public static function annotate_post_acf( $html, $post_id ) {
 		$post_id = (int) $post_id;
 
-		if ( ! is_string( $html ) || '' === trim( $html ) || ! $post_id || ! self::can_edit() || $post_id !== self::target_post_id() || ! function_exists( 'acf_get_field' ) ) {
+		if ( ! is_string( $html ) || '' === trim( $html ) || ! $post_id || ! self::can_edit() || $post_id !== self::target_post_id() || ! Starter_Live_Frontend::has_fields() ) {
 			return $html;
 		}
 
@@ -176,7 +190,7 @@ class Starter_Live_Frontend {
 			return $html;
 		}
 
-		// Valori dei campi come li legge un blocco: nome => valore, _nome => chiave del campo ACF.
+		// Valori dei campi come li legge un blocco: nome => valore, _nome => chiave del campo.
 		$data = array();
 
 		foreach ( get_post_meta( $post_id ) as $name => $values ) {
@@ -193,7 +207,7 @@ class Starter_Live_Frontend {
 		}
 
 		// Campi che il tema non mostra nella scheda (o che mostra altrove) e quindi non vanno agganciati a un altro elemento.
-		foreach ( (array) apply_filters( 'starter_live_acf_post_skip', array(), get_post_type( $post_id ) ) as $skip ) {
+		foreach ( (array) apply_filters( 'starter_live_meta_post_skip', array(), get_post_type( $post_id ) ) as $skip ) {
 			unset( $data[ $skip ], $data[ '_' . $skip ] );
 		}
 
@@ -501,7 +515,7 @@ class Starter_Live_Frontend {
 			)
 		);
 
-		// Marcatore di un numero (prezzo, superficie…) di una scheda con campi ACF: lo raccoglie annotate_post_acf().
+		// Marcatore di un numero (prezzo, superficie…) di una scheda con campi: lo raccoglie annotate_post_acf().
 		if ( 'acfnum' === $args['src'] ) {
 			return preg_match( '/^[A-Za-z0-9_]+$/', (string) $args['key'] ) ? $attrs . ' data-live-num="' . esc_attr( $args['key'] ) . '"' : $attrs;
 		}

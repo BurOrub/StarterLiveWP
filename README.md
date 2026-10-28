@@ -2,7 +2,7 @@
 
 **English** · [Italiano](#italiano)
 
-Edit texts, images, videos and links straight from the frontend. It works with Gutenberg blocks and with the ACF blocks of Starter Theme, **without changing the theme**.
+Edit texts, images, videos and links straight from the frontend. It works **without changing the theme**.
 
 ## Usage
 1. When logged in (with permission to edit the page), **✎ Modifica contenuti** appears at the bottom center (and in the admin bar).
@@ -40,10 +40,10 @@ For anyone who can edit the page it is never cached (DONOTCACHEPAGE and the `X-L
 
 A content type built with ACF fields instead of blocks (e.g. a property record) can be made editable from the frontend:
 
-1. the theme declares the type with the `starter_live_acf_post_types` filter (e.g. `immobile`);
+1. the theme declares the type with the `starter_live_meta_post_types` filter (e.g. `immobile`);
 2. it passes the record's HTML through the `starter_live_post_html` filter (`apply_filters( 'starter_live_post_html', $html, $post_id )`): the plugin hooks the ACF fields' texts, images and galleries by itself, as in blocks;
 3. for **numbers** (price, surface…) the theme marks the element with `starter_live_attrs( array( 'src' => 'acfnum', 'key' => 'field_name' ) )`; in the popup you type the number and only the figure changes on the page; the same marker works for **choices from a list** (single or multiple dropdown: in the popup a list or checkboxes, saved only if they are among the field's choices) and for short texts; if several elements show the same field, they all change together; for **lists written in a text field, one item per line** (e.g. a service's checkmark list) the theme marks the `<ul>` with `starter_live_attrs( array( 'src' => 'acflines', 'key' => 'field_name' ) )` and in the popup you edit the whole list (Enter = new item, Backspace on an empty item removes it), saved one item per line;
-4. with `starter_live_acf_post_skip` you exclude the fields that the theme does not show in the record.
+4. with `starter_live_meta_post_skip` you exclude the fields that the theme does not show in the record.
 
 Cases in use: **properties** ("immobili") and **Portfolio projects** (`portfolio`): from the header you edit title, summary (`post_excerpt`), text under the title (`acfnum` marker), agency names and links, project link; the `progetto-*` blocks (credits included, with the collaborators' links) like all ACF blocks.
 
@@ -86,7 +86,7 @@ Publishing a version: raise `Version:` in `starter-live.php` (and `STARTER_LIVE_
 
 ## Italiano
 
-Modifica testi, immagini, video e link direttamente dal frontend. Funziona con i blocchi Gutenberg e con i blocchi ACF del Tema Starter, **senza modificare il tema**.
+Modifica testi, immagini, video e link direttamente dal frontend. Funziona **senza modificare il tema**.
 
 ### Uso
 1. Da loggato (con permesso di modifica sulla pagina) compare in basso al centro **✎ Modifica contenuti** (anche nella barra admin).
@@ -124,10 +124,10 @@ Per chi può modificare la pagina non viene mai messa in cache (DONOTCACHEPAGE e
 
 Un tipo di contenuto fatto con campi ACF invece che con blocchi (es. la scheda di un immobile) si può rendere modificabile dal frontend:
 
-1. il tema dichiara il tipo con il filtro `starter_live_acf_post_types` (es. `immobile`);
+1. il tema dichiara il tipo con il filtro `starter_live_meta_post_types` (es. `immobile`);
 2. passa l'HTML della scheda dal filtro `starter_live_post_html` (`apply_filters( 'starter_live_post_html', $html, $post_id )`): il plugin aggancia da solo testi, immagini e gallerie dei campi ACF, come nei blocchi;
 3. per i **numeri** (prezzo, superficie…) il tema indica l'elemento con `starter_live_attrs( array( 'src' => 'acfnum', 'key' => 'nome_campo' ) )`; nel popup si scrive il numero e nella pagina cambia solo la cifra; lo stesso marcatore vale per le **scelte da elenco** (menu a tendina singolo o multiplo: nel popup un elenco o delle caselle, salvate solo se tra le scelte del campo) e per i testi brevi; se più elementi mostrano lo stesso campo, cambiano tutti insieme; per gli **elenchi scritti in un campo di testo, una voce per riga** (es. l'elenco con spunte di un servizio) il tema marca il `<ul>` con `starter_live_attrs( array( 'src' => 'acflines', 'key' => 'nome_campo' ) )` e nel popup si modifica l'intera lista (Invio = nuova voce, Backspace su una voce vuota la toglie), salvata una voce per riga;
-4. con `starter_live_acf_post_skip` si escludono i campi che il tema non mostra nella scheda.
+4. con `starter_live_meta_post_skip` si escludono i campi che il tema non mostra nella scheda.
 
 Casi in uso: gli **immobili** e i **progetti del Portfolio** (`portfolio`): dalla testata si modificano titolo, riassunto (`post_excerpt`), testo sotto il titolo (marcatore `acfnum`), nomi e link delle agenzie, link al progetto; i blocchi `progetto-*` (crediti compresi, con i link ai collaboratori) come tutti i blocchi ACF.
 

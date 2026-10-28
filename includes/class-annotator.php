@@ -231,7 +231,7 @@ class Starter_Live_Annotator {
 				continue;
 			}
 
-			$field = acf_get_field( $data[ '_' . $name ] );
+			$field = Starter_Live_Frontend::field_def( $data[ '_' . $name ] );
 
 			if ( ! $field || empty( $field['type'] ) ) {
 				continue;

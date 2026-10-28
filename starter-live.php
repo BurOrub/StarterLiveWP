@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Starter Live
- * Description: Modifica testi, immagini, video e link direttamente dal frontend (blocchi Gutenberg e blocchi ACF), senza entrare nel backend. Pensato per il Tema Starter.
+ * Description: Modifica testi, immagini, video e link direttamente dal frontend.
  * Version: 0.2.0
  * Requires at least: 6.4
  * Requires PHP: 7.4
