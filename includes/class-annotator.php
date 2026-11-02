@@ -106,6 +106,7 @@ class Starter_Live_Annotator {
 							'title'  => trim( html_entity_decode( wp_strip_all_tags( $inner ), ENT_QUOTES ) ),
 							'url'    => (string) $p->get_attribute( 'href' ),
 							'target' => '_blank' === $p->get_attribute( 'target' ) ? '_blank' : '',
+							'icon'   => isset( $block['attrs']['starterIcon'] ) ? (string) $block['attrs']['starterIcon'] : '',
 						),
 					)
 				);

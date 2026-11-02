@@ -432,6 +432,7 @@
 				}
 				el.setAttribute('href', value.url);
 				if (value.target === '_blank') { el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener'); } else { el.removeAttribute('target'); el.removeAttribute('rel'); }
+				if (typeof value.icon === 'string') { loadIcons(function () { setLinkIcon(el, value.icon); }); }
 				break;
 			case 'shortcode':
 				el.innerHTML = '<p style="opacity:.6;margin:0">' + esc(T.previewLoading) + '</p>';
@@ -484,6 +485,24 @@
 		var fr = iconFrame(name);
 		var paint = Object.keys(fr.paint).map(function (k) { return k + '="' + String(fr.paint[k]).replace(/"/g, '&quot;') + '"'; }).join(' ');
 		return '<svg width="' + size + '" height="' + size + '" viewBox="' + fr.vb + '" ' + paint + ' aria-hidden="true">' + (iconLib.icons[name] || '') + '</svg>';
+	}
+
+	/* Icona a destra del testo di un pulsante/link: nome dell'icona oggi nell'elemento ('' se non c'è) e sostituzione (name '' = toglie). */
+	function linkIconName(el) {
+		var s = el.querySelector('svg.icon');
+		var m = s ? /icon--([a-z0-9-]+)/.exec(s.getAttribute('class') || '') : null;
+		return m ? m[1] : '';
+	}
+
+	function setLinkIcon(el, name) {
+		el.querySelectorAll('svg.icon').forEach(function (s) { s.parentNode.removeChild(s); });
+		if (name && iconLib && iconLib.icons[name]) {
+			var tpl = document.createElement('div');
+			tpl.innerHTML = iconSvg(name, 16);
+			var svg = tpl.firstChild;
+			svg.setAttribute('class', 'icon icon--' + name);
+			el.appendChild(svg);
+		}
 	}
 
 	function applyIcon(el, name) {
@@ -779,7 +798,57 @@
 			body.appendChild(h('label', { text: T.linkUrl }));
 			body.appendChild(u);
 			body.appendChild(h('label', { class: 'chk' }, [c, document.createTextNode(T.newTab)]));
-			read = function () { return { title: t.value, url: u.value, target: c.checked ? '_blank' : '' }; };
+
+			// Icona a destra del testo: si vede quella attuale (anche quella predefinita del blocco), si può cambiare, togliere o aggiungere.
+			var lnkIcon = linkIconName(el), lnkTouched = false;
+			var lnkCur = h('div', { class: 'icur' });
+			var lnkPanel = h('div', { style: 'display:none' });
+			var paintLnk = function () {
+				lnkCur.innerHTML = '';
+				if (lnkIcon && iconLib) { var ib = h('span', { class: 'icb' }); ib.innerHTML = iconSvg(lnkIcon, 24); lnkCur.appendChild(ib); lnkCur.appendChild(h('span', { text: lnkIcon.replace('brand-', '') })); }
+				else { lnkCur.appendChild(h('span', { class: 'none', text: T.iconNone })); }
+			};
+			var lnkGrid = h('div', { class: 'ig' });
+			var lnkSearch = h('input', { type: 'text', placeholder: T.iconTitle });
+			var lnkShown = [], lnkAt = 0;
+			var lnkMore = function () {
+				var end = Math.min(lnkShown.length, lnkAt + 120), html = '';
+				for (var k = lnkAt; k < end; k++) { html += '<button type="button" class="ii' + (lnkShown[k] === lnkIcon ? ' on' : '') + '" data-n="' + lnkShown[k] + '" title="' + lnkShown[k] + '">' + iconSvg(lnkShown[k], 22) + '</button>'; }
+				lnkGrid.insertAdjacentHTML('beforeend', html); lnkAt = end;
+			};
+			var lnkRefresh = function () {
+				var terms = lnkSearch.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+				lnkShown = iconLib.names.filter(function (n) { var hay = (iconLib.keywords[n] || n) + ' ' + n; return terms.every(function (w) { return hay.indexOf(w) !== -1; }); });
+				lnkGrid.innerHTML = ''; lnkAt = 0; lnkGrid.scrollTop = 0; lnkMore(); placePopup();
+			};
+			lnkGrid.addEventListener('scroll', function () { if (lnkGrid.scrollTop + lnkGrid.clientHeight >= lnkGrid.scrollHeight - 120) { lnkMore(); } });
+			lnkGrid.addEventListener('click', function (e) {
+				var ib = e.target.closest ? e.target.closest('.ii') : null;
+				if (!ib) { return; }
+				lnkIcon = ib.getAttribute('data-n'); lnkTouched = true;
+				lnkGrid.querySelectorAll('.ii.on').forEach(function (x) { x.className = 'ii'; });
+				ib.className = 'ii on'; paintLnk();
+			});
+			lnkSearch.addEventListener('input', function () { if (iconLib) { lnkRefresh(); } });
+			lnkPanel.appendChild(lnkSearch); lnkPanel.appendChild(lnkGrid);
+			body.appendChild(h('label', { text: T.linkIcon }));
+			body.appendChild(lnkCur);
+			body.appendChild(h('div', { class: 'row' }, [
+				h('button', { type: 'button', class: 'btn', text: T.linkIconPick, onclick: function () {
+					lnkPanel.style.display = lnkPanel.style.display === 'none' ? '' : 'none';
+					if (lnkPanel.style.display === '' && !lnkGrid.children.length) { loadIcons(function () { lnkRefresh(); }); }
+					placePopup();
+				} }),
+				h('button', { type: 'button', class: 'lnk', text: T.iconNone, onclick: function () { lnkIcon = ''; lnkTouched = true; lnkGrid.querySelectorAll('.ii.on').forEach(function (x) { x.className = 'ii'; }); paintLnk(); } })
+			]));
+			body.appendChild(lnkPanel);
+			loadIcons(function () { paintLnk(); placePopup(); });
+
+			read = function () {
+				var out = { title: t.value, url: u.value, target: c.checked ? '_blank' : '' };
+				if (lnkTouched) { out.icon = lnkIcon; } // l'icona viaggia solo se l'hai toccata
+				return out;
+			};
 			setTimeout(function () { var first = f.notext ? u : t; first.focus(); first.select(); }, 30);
 		} else if (f.t === 'shortcode') {
 			var sc = h('input', { type: 'text' });

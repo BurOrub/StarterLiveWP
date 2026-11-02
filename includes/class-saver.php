@@ -568,6 +568,12 @@ class Starter_Live_Saver {
 					'url'    => $link['url'],
 					'target' => $link['target'],
 				);
+
+				if ( isset( $link['icon'] ) ) {
+					$new['icon'] = $link['icon'];
+				} elseif ( isset( $block['attrs']['data'][ $name ] ) && is_array( $block['attrs']['data'][ $name ] ) && array_key_exists( 'icon', $block['attrs']['data'][ $name ] ) ) {
+					$new['icon'] = (string) $block['attrs']['data'][ $name ]['icon']; // L'icona già scelta resta com'è.
+				}
 				break;
 
 			case 'image':
@@ -719,6 +725,14 @@ class Starter_Live_Saver {
 
 			case 'core/button':
 				$link = self::clean_link( $value );
+
+				if ( isset( $link['icon'] ) ) {
+					if ( '' === $link['icon'] ) {
+						unset( $block['attrs']['starterIcon'] );
+					} else {
+						$block['attrs']['starterIcon'] = $link['icon']; // L'icona dei pulsanti nativi (plugin Starter Blocks) sta nell'attributo del blocco.
+					}
+				}
 
 				return self::map_html(
 					$block,
@@ -891,12 +905,22 @@ class Starter_Live_Saver {
 
 	private static function clean_link( $value ) {
 		$value = is_array( $value ) ? $value : array();
-
-		return array(
+		$link  = array(
 			'title'  => sanitize_text_field( (string) ( $value['title'] ?? '' ) ),
 			'url'    => esc_url_raw( (string) ( $value['url'] ?? '' ) ),
 			'target' => '_blank' === ( $value['target'] ?? '' ) ? '_blank' : '',
 		);
+
+		// Icona a destra del testo ('' = nessuna): c'è solo se è stata scelta, altrimenti il pulsante non cambia.
+		if ( array_key_exists( 'icon', $value ) ) {
+			$icon = strtolower( trim( (string) $value['icon'] ) );
+
+			if ( '' === $icon || ( preg_match( '/^[a-z0-9-]+$/', $icon ) && ( ! function_exists( 'starter_icon_exists' ) || starter_icon_exists( $icon ) ) ) ) {
+				$link['icon'] = $icon;
+			}
+		}
+
+		return $link;
 	}
 
 	private static function attachment_id( $value ) {

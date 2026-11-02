@@ -341,6 +341,8 @@ class Starter_Live_Frontend {
 				'chooseBtn'   => __( 'Usa questo', 'starter-live' ),
 				'linkText'    => __( 'Testo', 'starter-live' ),
 				'linkUrl'     => __( 'Indirizzo (URL)', 'starter-live' ),
+				'linkIcon'    => __( 'Icona a destra del testo', 'starter-live' ),
+				'linkIconPick' => __( 'Scegli o cambia', 'starter-live' ),
 				'newTab'      => __( 'Apri in una nuova scheda', 'starter-live' ),
 				'askUrl'      => __( 'Indirizzo del link', 'starter-live' ),
 				'bold'        => __( 'Grassetto', 'starter-live' ),
